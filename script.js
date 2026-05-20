@@ -277,6 +277,53 @@ if (profileCredits) profileCredits.textContent = liveCredits;
 // ═════════════════════════════════════
 const navItems = document.querySelectorAll(".nav-item[data-page]");
 
+// ═════════════════════════════════════
+// REWARDED AD CALLBACK SYSTEM
+// ═════════════════════════════════════
+
+window.pendingRewardType = null;
+
+// Called AFTER user fully watches rewarded ad
+window.onAdRewarded = async function () {
+
+  const user = window.cashTreasureUser;
+
+  if (!user) return;
+
+  // WATCH AD reward
+  if (window.pendingRewardType === "watch_ad") {
+
+    const newCredits = (user.credits || 0) + 1;
+
+    user.credits = newCredits;
+
+    document.getElementById("credit-count").textContent = newCredits;
+
+    import("./firebase.js").then(async ({ db }) => {
+
+      const { doc, updateDoc, increment } =
+        await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+
+      await updateDoc(doc(db, "users", user.uid), {
+        credits: increment(1),
+        daily_ads_watched: increment(1)
+      });
+
+    });
+
+    showToast("+1 Credit Added!");
+
+  }
+
+  // DAILY CHECKIN reward
+  if (window.pendingRewardType === "daily_checkin") {
+
+    showToast("Daily reward claimed!");
+
+  }
+
+  window.pendingRewardType = null;
+};
 
 // ═════════════════════════════════════
 // WATCH AD BUTTON → ANDROID INTERSTITIAL
@@ -290,7 +337,9 @@ if (watchAdButton) {
 
     // Trigger Android fullscreen ad
     if (window.Android) {
-      Android.showAd();
+     window.pendingRewardType = "watch_ad";
+
+Android.showAd();
     }
 
   });
