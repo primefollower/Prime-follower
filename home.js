@@ -118,66 +118,59 @@ if (watchBtn) {
   watchBtn.dataset.locked = "true";
   watchBtn.textContent = "⏳ Watching...";
 
-  try {
-    let profile = await getUserProfile(user.uid);
 
-  // 🔒 CREDIT LIMIT (25/day)
-if ((profile.daily_credits_earned || 0) >= 25) {
-  showToast("You can't earn more than 25 credits in a day", "error");
+try {
+
+  let profile = await getUserProfile(user.uid);
+
+  // DAILY CREDIT LIMIT
+  if ((profile.daily_credits_earned || 0) >= 25) {
+
+    showToast("You can't earn more than 25 credits in a day", "error");
+
+    return;
+  }
+
+  // DAILY AD LIMIT
+  if ((profile.daily_ads_watched || 0) >= 20) {
+
+    showToast("Daily ad limit reached (20)", "error");
+
+    return;
+  }
+
+} catch (err) {
+
+
+  window.pendingRewardType = "watch_ad";
+
+if (window.Android && Android.showAd) {
+
+  Android.showAd();
+
+} else {
+
+  showToast("Ads not available", "error");
+
   return;
 }
 
-// 🔒 AD LIMIT (20/day)
-if ((profile.daily_ads_watched || 0) >= 20) {
-  showToast("Daily ad limit reached (20)", "error");
-  return;
+  console.error(err);
+
+  showToast("Action blocked 🚫", "error");
+
+} finally {
+
+  setTimeout(() => {
+
+    watchBtn.disabled = false;
+
+    watchBtn.dataset.locked = "false";
+
+    watchBtn.textContent = "▶ WATCH AD";
+
+  }, 5000);
 }
-    // rest of your code...
-
-
-      await addDoc(collection(db, "ad_requests"), {
-        user_id: user.uid,
-        created_at: serverTimestamp(),
-        device_time: Date.now()
-      });
-
-    await updateDoc(doc(db, "users", user.uid), {
-
-     
-  credits: increment(1),
-  daily_ads_watched: increment(1),
-  daily_credits_earned: increment(1), // 🔥 ADD THIS
-  total_earned: increment(1),
-  daily_ads_date: serverTimestamp()
-});
-
-await logTransaction(user.uid, "Watched Ad", 1);
-
-      // FORCE fresh profile read so daily_ads_date + count are in sync
-profile = await getUserProfile(user.uid);
-
-// 🔥 FORCE MANUAL SYNC (IMPORTANT)
-
-
-
-window.cashTreasureUser.credits = profile.credits;
-
-updateCreditsDisplay(profile.credits);
-updateAdCount(profile);
-renderCheckin(profile);
-
-      showToast("+1 Credit Added 🎉");
-
-    } catch (err) {
-      console.error(err);
-      showToast("Action blocked 🚫", "error");
-      } finally {
-      watchBtn.disabled = false;
-      watchBtn.dataset.locked = "false";
-      watchBtn.textContent = "▶ WATCH AD";
-    }
-
-
     
   });
   
