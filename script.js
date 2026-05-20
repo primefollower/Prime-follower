@@ -276,6 +276,27 @@ if (profileCredits) profileCredits.textContent = liveCredits;
 // Bottom Navigation
 // ═════════════════════════════════════
 const navItems = document.querySelectorAll(".nav-item[data-page]");
+
+
+// ═════════════════════════════════════
+// WATCH AD BUTTON → ANDROID INTERSTITIAL
+// ═════════════════════════════════════
+
+const watchAdButton = document.getElementById("btn-watch-ad");
+
+if (watchAdButton) {
+
+  watchAdButton.addEventListener("click", () => {
+
+    // Trigger Android fullscreen ad
+    if (window.Android) {
+      Android.showAd();
+    }
+
+  });
+
+}
+
 const pageSections = document.querySelectorAll(".page-section");
 
 navItems.forEach((item) => {
