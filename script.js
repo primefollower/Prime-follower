@@ -293,11 +293,18 @@ window.onAdRewarded = async function () {
   // WATCH AD reward
   if (window.pendingRewardType === "watch_ad") {
 
-    const newCredits = (user.credits || 0) + 1;
+const creditEl = document.getElementById("credit-count");
 
-    user.credits = newCredits;
+const currentCredits = Number(user.credits || 0);
 
-    document.getElementById("credit-count").textContent = newCredits;
+const updatedCredits = currentCredits + 1;
+
+user.credits = updatedCredits;
+
+if (creditEl) {
+
+  creditEl.textContent = updatedCredits;
+}
 
     import("./firebase.js").then(async ({ db }) => {
 
@@ -315,22 +322,16 @@ window.onAdRewarded = async function () {
 
   }
 
-  // DAILY CHECKIN reward
-  if (window.pendingRewardType === "daily_checkin") {
+// DAILY CHECKIN reward handled in dailycheckin.js
+if (window.pendingRewardType === "daily_checkin") {
 
-if (window.Android) {
+  if (window.onDailyCheckinRewarded) {
 
-  window.pendingRewardType = "daily_checkin";
-
-  Android.showAd();
-
-} else {
-
-  showToast("Daily reward claimed!");
-
+    await window.onDailyCheckinRewarded();
+  }
 }
 
-  }
+  
 
   window.pendingRewardType = null;
 };
