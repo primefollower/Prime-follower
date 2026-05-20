@@ -99,81 +99,54 @@ function updateAdCount(profile) {
 }
 
 // ================================
-// WATCH AD (FIXED — immediate UI sync)
+// WATCH AD BUTTON (FIXED)
 // ================================
 const watchBtn = document.getElementById("btn-watch-ad");
 
 if (watchBtn) {
- watchBtn.addEventListener("click", async () => {
-  const user = window.cashTreasureUser;
+  watchBtn.addEventListener("click", async () => {
+    const user = window.cashTreasureUser;
+    if (!user) return showToast("Login first", "error");
 
-  if (!user) return showToast("Login first", "error");
+    if (watchBtn.dataset.locked === "true") return;
 
-  // 🔥 FIX: reset check first
-  await getDailyAdsCount(user.uid);
+    watchBtn.disabled = true;
+    watchBtn.dataset.locked = "true";
+    watchBtn.textContent = "⏳ Watching...";
 
-  if (watchBtn.dataset.locked === "true") return;
+    try {
+      await getDailyAdsCount(user.uid);
+      const profile = await getUserProfile(user.uid);
 
-  watchBtn.disabled = true;
-  watchBtn.dataset.locked = "true";
-  watchBtn.textContent = "⏳ Watching...";
+      if ((profile.daily_credits_earned || 0) >= 25) {
+        showToast("You can't earn more than 25 credits in a day", "error");
+        return;
+      }
 
+      if ((profile.daily_ads_watched || 0) >= 20) {
+        showToast("Daily ad limit reached (20)", "error");
+        return;
+      }
 
-try {
+      // ✅ All checks passed → Show rewarded ad
+      window.pendingRewardType = "watch_ad";
+      if (window.Android && Android.showAd) {
+        Android.showAd();
+      } else {
+        showToast("Ads not available", "error");
+      }
 
-  let profile = await getUserProfile(user.uid);
-
-  // DAILY CREDIT LIMIT
-  if ((profile.daily_credits_earned || 0) >= 25) {
-
-    showToast("You can't earn more than 25 credits in a day", "error");
-
-    return;
-  }
-
-  // DAILY AD LIMIT
-  if ((profile.daily_ads_watched || 0) >= 20) {
-
-    showToast("Daily ad limit reached (20)", "error");
-
-    return;
-  }
-
-} catch (err) {
-
-
-  window.pendingRewardType = "watch_ad";
-
-if (window.Android && Android.showAd) {
-
-  Android.showAd();
-
-} else {
-
-  showToast("Ads not available", "error");
-
-  return;
-}
-
-  console.error(err);
-
-  showToast("Action blocked 🚫", "error");
-
-} finally {
-
-  setTimeout(() => {
-
-    watchBtn.disabled = false;
-
-    watchBtn.dataset.locked = "false";
-
-    watchBtn.textContent = "▶ WATCH AD";
-
-  }, 5000);
-}
-    
+    } catch (err) {
+      console.error(err);
+      showToast("Something went wrong", "error");
+    } finally {
+      setTimeout(() => {
+        watchBtn.disabled = false;
+        watchBtn.dataset.locked = "false";
+        watchBtn.textContent = "▶ WATCH AD";
+      }, 5000);
+    }
   });
-  
 }
 
 
