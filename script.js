@@ -318,7 +318,17 @@ window.onAdRewarded = async function () {
   // DAILY CHECKIN reward
   if (window.pendingRewardType === "daily_checkin") {
 
-    showToast("Daily reward claimed!");
+if (window.Android) {
+
+  window.pendingRewardType = "daily_checkin";
+
+  Android.showAd();
+
+} else {
+
+  showToast("Daily reward claimed!");
+
+}
 
   }
 
