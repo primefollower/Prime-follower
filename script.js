@@ -1,7 +1,5 @@
 
 
-
-
 window.addEventListener("load", () => {
   setTimeout(() => {
     const loader = document.getElementById("load2s-overlay");
@@ -290,37 +288,61 @@ window.onAdRewarded = async function () {
 
   if (!user) return;
 
-  // WATCH AD reward
-  if (window.pendingRewardType === "watch_ad") {
+if (window.pendingRewardType === "watch_ad") {
 
-const creditEl = document.getElementById("credit-count");
+  const user = window.cashTreasureUser;
 
-const currentCredits = Number(user.credits || 0);
+  if (!user) return;
 
-const updatedCredits = currentCredits + 1;
+  import("./firebase.js").then(async ({ db }) => {
 
-user.credits = updatedCredits;
+    const {
+      doc,
+      updateDoc,
+      increment,
+      getDoc
+    } = await import(
+      "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+    );
 
-if (creditEl) {
+    await updateDoc(doc(db, "users", user.uid), {
 
-  creditEl.textContent = updatedCredits;
-}
-
-    import("./firebase.js").then(async ({ db }) => {
-
-      const { doc, updateDoc, increment } =
-        await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-
-      await updateDoc(doc(db, "users", user.uid), {
-        credits: increment(1),
-        daily_ads_watched: increment(1)
-      });
+      credits: increment(1),
+      daily_ads_watched: increment(1),
+      daily_credits_earned: increment(1),
+      total_earned: increment(1)
 
     });
 
-    showToast("+1 Credit Added!");
+    const freshDoc = await getDoc(doc(db, "users", user.uid));
 
-  }
+    const profile = freshDoc.data();
+
+    user.credits = profile.credits || 0;
+
+    const creditEl = document.getElementById("credit-count");
+
+    if (creditEl) {
+
+      creditEl.textContent = user.credits;
+    }
+
+    const adCountEl = document.getElementById("ad-count");
+
+    if (adCountEl) {
+
+      adCountEl.textContent =
+        `${profile.daily_ads_watched || 0} / 20 ads today`;
+    }
+
+    showToast("+1 Credit Added 🎉");
+
+    if (window.renderCheckin) {
+
+      window.renderCheckin(profile);
+    }
+  });
+}
 
 // DAILY CHECKIN reward handled in dailycheckin.js
 if (window.pendingRewardType === "daily_checkin") {
