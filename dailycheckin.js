@@ -167,71 +167,148 @@ window.addEventListener("userReady", async (e) => {
   renderCheckin(profile);
 });
 
+
 // ================================
-// CLAIM BUTTON
+// CLAIM BUTTON CLICK
 // ================================
-document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("btn-checkin");
+
+document.addEventListener("click", async (e) => {
+
+  const btn = e.target.closest("#btn-checkin");
+
   if (!btn) return;
 
-  btn.addEventListener("click", async () => {
+  if (isClaiming) return;
+
+  isClaiming = true;
+
+  btn.disabled = true;
+
+  btn.innerHTML = "Loading...";
+
+  try {
+
     const user = window.cashTreasureUser;
-    if (!user) return;
 
-    if (isClaiming) return;
-    isClaiming = true;
+    if (!user) {
 
-    if (hasClaimedToday) {
-      showToast("Already Checked In😅!", "error");
-      btn.innerHTML = '✅ Claimed!';
-      btn.classList.add("claimed");
-      isClaiming = false;
+      showToast("Login required", "error");
+
       return;
     }
 
-    btn.disabled = true;
-    btn.innerHTML = '⏳ Claiming...';
-    btn.classList.add("loading");
+    // STORE REWARD TYPE
+    window.pendingRewardType = "daily_checkin";
 
-    try {
-   window.__ALLOW_CHECKIN__ = true;
+    // STORE USER
+    window.pendingCheckinUser = user;
 
-let res;
-try {
-  res = await claimDailyCheckin(user.uid);
-} finally {
-  window.__ALLOW_CHECKIN__ = false;
-}
-      if (!res.success) {
-        showToast(res.message, "error");
-        btn.innerHTML = '🎁 CLAIM';
-        btn.disabled = false;
-        return;
-      }
+    // SHOW AD
+    if (window.Android && Android.showAd) {
 
-      const profile = await getUserProfile(user.uid);
-      hasClaimedToday = true;
-      renderCheckin(profile);
+      Android.showAd();
 
-      window.cashTreasureUser.credits = profile.credits;
-      const creditEl = document.getElementById("credit-count");
-      if (creditEl) creditEl.textContent = profile.credits;
+    } else {
 
-      if (res.reward > 0) {
-        showToast(`+${res.reward} Credits Added 🎉`);
-      } else if (res.isOops) {
-        showToast("😅 Oops Day! No Credit Today");
-      } else if (res.isGift) {
-        showToast(`🎁 You got ${res.reward} Credits!`);
-      }
+      showToast("Ads not available", "error");
 
-    } catch (err) {
-      console.error('Check-in error:', err);
-      showToast('Something went wrong. Try again.', "error");
-      btn.innerHTML = '🎁 CLAIM';
       btn.disabled = false;
-    } finally {
+
+      btn.innerHTML = '🎁 CLAIM';
+
       isClaiming = false;
     }
-  });
+
+  } catch (err) {
+
+    console.error(err);
+
+    showToast("Something went wrong", "error");
+
+    btn.disabled = false;
+
+    btn.innerHTML = '🎁 CLAIM';
+
+    isClaiming = false;
+  }
 });
+
+// =======================================
+// REWARD AFTER FULL AD WATCH
+// =======================================
+
+window.onDailyCheckinRewarded = async function () {
+
+  const user = window.pendingCheckinUser;
+
+  if (!user) return;
+
+  const btn = document.getElementById("btn-checkin");
+
+  try {
+
+    window.__ALLOW_CHECKIN__ = true;
+
+    let res;
+
+    try {
+
+      res = await claimDailyCheckin(user.uid);
+
+    } finally {
+
+      window.__ALLOW_CHECKIN__ = false;
+    }
+
+    if (!res.success) {
+
+      showToast(res.message, "error");
+
+      btn.innerHTML = '🎁 CLAIM';
+
+      btn.disabled = false;
+
+      return;
+    }
+
+    const profile = await getUserProfile(user.uid);
+
+    hasClaimedToday = true;
+
+    renderCheckin(profile);
+
+    window.cashTreasureUser.credits = profile.credits;
+
+    const creditEl = document.getElementById("credit-count");
+
+    if (creditEl) {
+
+      creditEl.textContent = profile.credits;
+    }
+
+    if (res.reward > 0) {
+
+      showToast(`+${res.reward} Credits Added 🎉`);
+
+    } else if (res.isOops) {
+
+      showToast("😅 Oops Day! No Credit Today");
+
+    } else if (res.isGift) {
+
+      showToast(`🎁 You got ${res.reward} Credits!`);
+    }
+
+  } catch (err) {
+
+    console.error(err);
+
+    showToast("Something went wrong", "error");
+
+  } finally {
+
+    isClaiming = false;
+
+    window.pendingCheckinUser = null;
+  }
+};
