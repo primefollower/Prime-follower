@@ -66,22 +66,25 @@ document.querySelectorAll('.wallet-tab').forEach(tab => {
 function renderTransactions() {
   const listEl = document.getElementById('transaction-list');
 
-  let filtered = allTransactions;
-  if (currentTab === 'redeem') {
-    filtered = allTransactions.filter(tx => Number(tx.amount || 0) < 0);
-  } else {
-    filtered = allTransactions.filter(tx => Number(tx.amount || 0) > 0);
-  }
-
-  if (filtered.length === 0) {
-    listEl.innerHTML = `
-      <div class="empty-state">
-        <i class="fas fa-receipt"></i>
-        <p>No ${currentTab === 'redeem' ? 'order' : 'point'} history yet</p>
-      </div>
-    `;
-    return;
-  }
+let filtered = allTransactions;
+if (currentTab === 'redeem') {
+  // Show all orders (including free orders with amount 0 or negative)
+  filtered = allTransactions.filter(tx => {
+    const amount = Number(tx.amount || 0);
+    return amount <= 0 || tx.action?.toLowerCase().includes("order");
+  });
+} else {
+  filtered = allTransactions.filter(tx => Number(tx.amount || 0) > 0);
+}
+if (filtered.length === 0) {
+  listEl.innerHTML = `
+    <div class="empty-state">
+      <i class="fas fa-receipt"></i>
+      <p>No ${currentTab === 'redeem' ? 'order' : 'credit'} history yet</p>
+    </div>
+  `;
+  return;
+}
 
   listEl.innerHTML = filtered.map(tx => {
     const date = tx.date && tx.date.toDate ? tx.date.toDate() : new Date();
