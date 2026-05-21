@@ -2204,10 +2204,6 @@ body:has(#page-avatar.active) .bottom-nav {
 
 
 
-
-
-
-
 #load2s-overlay {
   position: fixed;
   z-index: 9999;
@@ -2260,4 +2256,24 @@ body:has(#page-avatar.active) .bottom-nav {
 
 .order-grid {
   padding-bottom: 40px;
+}
+
+
+
+
+
+
+/* Light Purple Order Card */
+.order-card.purple {
+  background: linear-gradient(135deg, #c084fc, #a855f7);
+  color: white;
+  box-shadow: 0 6px 24px rgba(168, 85, 247, 0.35);
+}
+
+/* First Order FREE - Green Button Style (Clean) */
+.order-card.first-free .btn-order {
+  background: #22c55e !important;
+  color: white !important;
+  border: 2px solid #16a34a !important;
+  font-weight: 800;
 }
