@@ -602,6 +602,7 @@ body::after {
    ORDER FLOW MODALS
    ═══════════════════════════════════ */
 /* ==================== IMPROVED MODAL (WebView Friendly) ==================== */
+/* ==================== FIXED MODAL (Scrollable + Proper Spacing) ==================== */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -609,42 +610,41 @@ body::after {
   width: 100%;
   height: 100%;
   display: none;
-  align-items: flex-start;           /* Changed from center */
+  align-items: flex-start;
   justify-content: center;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.6);
   z-index: 9999;
-  padding-top: 100px;                /* 100px from top */
-  padding-bottom: 150px;             /* 150px from bottom */
-  overflow-y: auto;                  /* Allow scrolling if needed */
+  padding-top: 100px;           /* 100px from top */
+  padding-bottom: 150px;        /* 150px from bottom */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-overlay.visible {
   display: flex;
 }
 
-/* Inner content box */
 .modal-content {
   width: 100%;
   max-width: 380px;
   margin: 0 auto;
-  background: transparent;
-  padding: 0 16px;                   /* side padding */
+  padding: 0 16px;
   display: flex;
   justify-content: center;
 }
 
-/* The actual white box - Now scrollable */
+/* The scrollable white box */
 .modal-box {
   width: 100%;
   max-width: 360px;
-  max-height: calc(100vh - 250px);  /* Important: makes it scrollable */
-  overflow-y: auto;
+  max-height: 65vh;                    /* ← Most important line */
+  overflow-y: auto;                    /* ← Makes it scrollable */
   background: #f5f6fa;
   border-radius: 20px;
   padding: 25px 20px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15),
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15), 
               0 5px 10px rgba(0,0,0,0.08);
-  -webkit-overflow-scrolling: touch; /* Smooth scrolling in WebView */
+  -webkit-overflow-scrolling: touch;   /* Smooth scroll in WebView */
 }
 
 .modal-overlay.visible .modal-content {
