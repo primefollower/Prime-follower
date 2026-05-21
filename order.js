@@ -69,32 +69,86 @@ window.addEventListener('userReady', async (e) => {
   const { uid } = e.detail;
   await checkActiveOrders(uid);
 });
+ 
 
-// ── Order cards click handler ──
+// ── First Order FREE Logic (Hide after use) ──
+const firstFreeCard = document.getElementById("first-free-card");
+const firstOrderBtn = document.getElementById("first-order-btn");
+const firstCostText = document.getElementById("first-cost-text");
+
+function updateFirstOrderUI() {
+  const user = window.cashTreasureUser;
+  if (!user || !firstFreeCard) return;
+
+  const hasUsedFreeOrder = (user.total_followers_ordered || 0) > 0;
+
+  if (hasUsedFreeOrder) {
+    // Hide the entire FREE card forever
+    firstFreeCard.style.display = "none";
+  } else {
+    // Show FREE card
+    firstFreeCard.style.display = "flex";
+    
+    if (firstOrderBtn) {
+      firstOrderBtn.textContent = "FREE";
+      firstOrderBtn.style.background = "#22c55e";
+      firstOrderBtn.style.color = "white";
+      firstOrderBtn.style.border = "none";
+    }
+    
+    if (firstCostText) {
+      firstCostText.innerHTML = `Cost: <span style="text-decoration: line-through; color:#999;">5 Credits</span>`;
+    }
+  }
+}
+
+// Run when user data is ready
+window.addEventListener('userReady', updateFirstOrderUI);
+if (window.cashTreasureUser) updateFirstOrderUI();
+
+// Click handler for FREE card
+if (firstOrderBtn) {
+  firstOrderBtn.addEventListener("click", () => {
+    const user = window.cashTreasureUser;
+    if (!user) return showToast("Please login first.", "error");
+
+    const hasUsedFreeOrder = (user.total_followers_ordered || 0) > 0;
+
+    if (hasUsedFreeOrder) {
+      showToast("Free order already used!", "error");
+      return;
+    }
+
+    selectedOrder = { followers: 3, credits_spent: 0, isFirstOrderFree: true };
+    document.getElementById('rules-modal').classList.add('visible');
+  });
+}
+
+// ── General Click Handler for ALL Other Order Cards ──
 document.querySelectorAll('.order-card .btn-order').forEach(btn => {
-  btn.addEventListener('click', (e) => {
+  // Skip the first card (already handled above)
+  if (btn.id === "first-order-btn") return;
+
+  btn.addEventListener("click", (e) => {
     const card = e.target.closest('.order-card');
     const followers = parseInt(card.dataset.followers);
     const cost = parseInt(card.dataset.cost);
 
-  const user = window.cashTreasureUser;
+    const user = window.cashTreasureUser;
+    if (!user) return showToast("Please login first.", "error");
 
-if (!user) {
-  showToast("Please login first.", "error");
-  return;
-}
+    // Check credits
+    if (user.credits < cost) {
+      showToast("❌ Not enough credits!", "error");
+      return;
+    }
 
-if (user.credits < cost) {
-  showToast("❌ Not enough credits!", "error");
-  return;
-}
-selectedOrder = { followers, credits_spent: cost };
-
-// Show rules modal
-document.getElementById('rules-modal').classList.add('visible');
-
+    selectedOrder = { followers, credits_spent: cost, isFirstOrderFree: false };
+    document.getElementById('rules-modal').classList.add('visible');
   });
 });
+
+
 
 // ── Rules Agree ──
 document.getElementById('rules-agree-btn').addEventListener('click', () => {
@@ -128,18 +182,21 @@ document.getElementById('username-modal').addEventListener('click', (e) => {
 // ── Confirm Order ──
 document.getElementById('confirm-order-btn').addEventListener('click', async () => {
 
-  console.log("DEBUG selectedOrder:", selectedOrder);
-  
   const user = window.cashTreasureUser;
-  if (!user || !selectedOrder) return;
+  
+  // ✅ Strongest protection at the very beginning
+  if (!user || !selectedOrder || typeof selectedOrder.credits_spent === 'undefined') {
+    showToast("Please select an order first.", "error");
+    return;
+  }
 
   const igUsername = document.getElementById('order-ig-username').value.trim();
   const igLink = document.getElementById('order-ig-link').value.trim();
 
   if (igLink && !igLink.startsWith("https://www.instagram.com")) {
-  showToast("Instagram link must start with https://www.instagram.com", "error");
-  return;
-}
+    showToast("Instagram link must start with https://www.instagram.com", "error");
+    return;
+  }
 
   if (!igUsername) {
     showToast('Please enter your Instagram username.', 'error');
@@ -150,36 +207,40 @@ document.getElementById('confirm-order-btn').addEventListener('click', async () 
   btn.disabled = true;
   btn.textContent = '⏳ Processing...';
 
-if (user.credits < selectedOrder.credits_spent) {
-  showToast("Insufficient Credits😅!", "error");
-  btn.disabled = false;
-  btn.textContent = 'CONFIRM ORDER';
-  return;
-}
+  // Final safety check before using credits_spent
+  if (user.credits < selectedOrder.credits_spent) {
+    showToast("Insufficient Credits😅!", "error");
+    btn.disabled = false;
+    btn.textContent = 'CONFIRM ORDER';
+    return;
+  }
 
   try {
-    const result = await createOrder(user.uid, {
-      instagram_username: igUsername,
-      instagram_link: igLink,
-      followers: selectedOrder.followers,
-     credits_spent: selectedOrder.credits_spent
-    });
+const result = await createOrder(user.uid, {
+  instagram_username: igUsername,
+  instagram_link: igLink,
+  followers: selectedOrder.followers,
+  credits_spent: selectedOrder.credits_spent
+});
 
     if (result.success) {
       showToast(`✅ Order placed! ${selectedOrder.followers} followers incoming!`);
 
 
-      // 🔥 SEND EMAIL ON ORDER
+// 🔥 SEND EMAIL ON ORDER (with First Order Free info)
 if (typeof emailjs !== "undefined") {
   try {
-await emailjs.send("service_swt79ip", "template_urw0ymr", {
-  user_email: user.email,
-  insta_username: igUsername,
-  insta_link: igLink || "Not provided",
-credits: selectedOrder.credits_spent,
- time_left: "Within 24 hours delivery",
-  order_time: new Date().toLocaleString()
-});
+    const isFree = selectedOrder.isFirstOrderFree;
+
+    await emailjs.send("service_swt79ip", "template_urw0ymr", {
+      user_email: user.email,
+      insta_username: igUsername,
+      insta_link: igLink || "Not provided",
+      credits: isFree ? "FREE (First Order)" : selectedOrder.credits_spent,
+      time_left: "Within 24 hours delivery",
+      order_time: new Date().toLocaleString(),
+      is_first_order: isFree ? "Yes - First Order Free" : "No"
+    });
   } catch (err) {
     console.warn("Order email failed:", err);
   }
@@ -197,7 +258,23 @@ const profile = await getUserProfile(user.uid);
 if (profile) {
   updateCreditsDisplay(profile.credits);
   window.cashTreasureUser.credits = profile.credits;
+
+  // ✅ IMPORTANT: Update total_followers_ordered locally
+  window.cashTreasureUser.total_followers_ordered = profile.total_followers_ordered || 0;
 }
+
+// Re-check and update the first order button
+updateFirstOrderUI();
+
+
+// ✅ Hide FREE card immediately if user just used free order
+if (selectedOrder.isFirstOrderFree) {
+  const firstFreeCard = document.getElementById("first-free-card");
+  if (firstFreeCard) {
+    firstFreeCard.style.display = "none";
+  }
+}
+
       // Show progress
    if (result.completionTime) {
   startCountdown(result.completionTime);
@@ -232,18 +309,33 @@ else {
     } else {
       showToast(result.message, 'error');
     }
-  } catch (err) {
+} catch (err) {
     console.error('Order error:', err);
-console.error("🔥 FULL ERROR:", err);
-console.error("🔥 ERROR CODE:", err.code);
-console.error("🔥 ERROR MESSAGE:", err.message);
-
-showToast(err.message || 'Something went wrong.', 'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'CONFIRM ORDER';
-    selectedOrder = null;
+    
+    // Show user-friendly message
+    if (err.code === 'permission-denied' || err.message.includes('permission')) {
+      showToast("Error Happening Try Again", "error");
+    } else {
+      showToast("Error Happening Try Again", "error");
+    }
+} finally {
+  btn.disabled = false;
+  btn.textContent = 'CONFIRM ORDER';
+  
+  // Reset First Free Card + Re-check button state
+  if (firstOrderBtn && firstCostText) {
+    firstOrderBtn.textContent = "ORDER";
+    firstOrderBtn.style.background = "";
+    firstOrderBtn.style.color = "";
+    firstOrderBtn.style.border = "";
+    firstCostText.innerHTML = "Cost: 5 Credits";
   }
+
+  // Re-run the check in case user just used free order
+  updateFirstOrderUI();
+
+  selectedOrder = null;
+}
 });
 
 // ── Check active orders ──
@@ -348,4 +440,9 @@ window.sendOrderEmail = function(data) {
     console.error("❌ Email error:", err);
   });
 }
+
+
+
+
+
 console.log('✅ Order module loaded.');
