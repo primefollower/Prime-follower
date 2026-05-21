@@ -235,13 +235,14 @@ if (profileAvatar) {
       joinDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
   }
 
-  // Global user state (restored on every load)
+// Global user state (restored on every load)
 window.cashTreasureUser = {
   uid: user.uid,
   email,
   username,
   credits,
-  avatar: profile.avatar   // 🔥 ADD THIS
+  avatar: profile.avatar,
+  total_followers_ordered: profile.total_followers_ordered || 0   // ✅ ADD THIS LINE
 };
 
   // Live credits sync
@@ -259,7 +260,9 @@ if (adCountEl && data.daily_ads_watched !== undefined) {
     const profileCredits = document.getElementById("profile-credits");
 if (profileCredits) profileCredits.textContent = liveCredits;
 
+
     window.cashTreasureUser.credits = liveCredits;
+window.cashTreasureUser.total_followers_ordered = data.total_followers_ordered || 0;
   });
 
   // Notify all modules
