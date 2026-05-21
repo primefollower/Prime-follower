@@ -603,6 +603,7 @@ body::after {
    ═══════════════════════════════════ */
 /* ==================== IMPROVED MODAL (WebView Friendly) ==================== */
 /* ==================== FIXED MODAL (Scrollable + Proper Spacing) ==================== */
+/* ==================== MODAL (50px top + 50px bottom + Blur) ==================== */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -612,10 +613,12 @@ body::after {
   display: none;
   align-items: flex-start;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.4);           /* 40% black overlay */
+  backdrop-filter: blur(10px);              /* Blur effect */
+  -webkit-backdrop-filter: blur(10px);      /* For WebView compatibility */
   z-index: 9999;
-  padding-top: 50px;           /* 50px from top */
-  padding-bottom: 50px;        /* 50px from bottom */
+  padding-top: 50px;                        /* 50px from top */
+  padding-bottom: 50px;                     /* 50px from bottom */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -637,16 +640,15 @@ body::after {
 .modal-box {
   width: 100%;
   max-width: 360px;
-  max-height: 65vh;                    /* ← Most important line */
-  overflow-y: auto;                    /* ← Makes it scrollable */
+  max-height: 75vh;                         /* Slightly increased because less padding */
+  overflow-y: auto;
   background: #f5f6fa;
   border-radius: 20px;
   padding: 25px 20px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.15), 
               0 5px 10px rgba(0,0,0,0.08);
-  -webkit-overflow-scrolling: touch;   /* Smooth scroll in WebView */
+  -webkit-overflow-scrolling: touch;
 }
-
 .modal-overlay.visible .modal-content {
   transform: translateY(0);
 }
