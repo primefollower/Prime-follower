@@ -2206,40 +2206,6 @@ body:has(#page-avatar.active) .bottom-nav {
 
 
 
-
-.modal-content {
-  width: 100%;
-  max-width: 380px;
-  margin: 0 auto;
-  background: transparent;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-box {
-  width: 100%;
-  max-width: 360px;
-
-  background: #f5f6fa; /* soft grey */
-
-  border-radius: 20px;
-  padding: 25px 20px;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-
-  /* 🔥 PREMIUM SHADOW */
-  box-shadow: 
-    0 10px 25px rgba(0,0,0,0.15),
-    0 5px 10px rgba(0,0,0,0.08),
-    inset 0 1px 0 rgba(255,255,255,0.6);
-}
-
-
 #load2s-overlay {
   position: fixed;
   z-index: 9999;
