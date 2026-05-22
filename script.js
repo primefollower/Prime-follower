@@ -536,4 +536,66 @@ if (localStorage.getItem("goHomeAfterReload") === "true") {
   }, 100);
 }
 
+
+// ================================
+// DNS BLOCKER DETECTION (Private DNS / Ad DNS)
+// ================================
+function detectPrivateDNS() {
+  return new Promise((resolve) => {
+    const testImg = new Image();
+    testImg.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"; // Known ad domain
+
+    const timeout = setTimeout(() => {
+      resolve(true); // DNS is blocking ads
+    }, 1500);
+
+    testImg.onload = () => {
+      clearTimeout(timeout);
+      resolve(false); // No DNS blocking
+    };
+
+    testImg.onerror = () => {
+      clearTimeout(timeout);
+      resolve(true); // DNS is blocking
+    };
+  });
+}
+
+// Show DNS Warning Screen
+async function showDNSWarningIfNeeded() {
+  const isBlocking = await detectPrivateDNS();
+
+  if (isBlocking) {
+    const overlay = document.getElementById("dns-warning-overlay");
+    if (overlay) {
+      overlay.style.display = "flex";
+
+      // Close app when button clicked
+      document.getElementById("dns-disable-btn").addEventListener("click", () => {
+        // For WebView
+        if (window.Android && Android.closeApp) {
+          Android.closeApp();
+        } else {
+          // For normal browser
+          window.close();
+          // Fallback message
+          setTimeout(() => {
+            alert("Please close the app and disable Private DNS.");
+          }, 300);
+        }
+      }, { once: true });
+    }
+  }
+}
+
+// Run DNS check on every app open
+window.addEventListener("load", () => {
+  // Run after small delay so loader finishes
+  setTimeout(() => {
+    showDNSWarningIfNeeded();
+  }, 2800);
+});
+
+
+
 console.log("✅ Persistent Login Activated + Main Script Loaded");
