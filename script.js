@@ -538,64 +538,61 @@ if (localStorage.getItem("goHomeAfterReload") === "true") {
 
 
 // ================================
-// DNS BLOCKER DETECTION (Private DNS / Ad DNS)
+// DNS BLOCKER DETECTION (Runs Every App Open)
 // ================================
 function detectPrivateDNS() {
   return new Promise((resolve) => {
     const testImg = new Image();
-    testImg.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"; // Known ad domain
+    testImg.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
 
-    const timeout = setTimeout(() => {
-      resolve(true); // DNS is blocking ads
-    }, 1500);
+    const timeout = setTimeout(() => resolve(true), 1400);
 
     testImg.onload = () => {
       clearTimeout(timeout);
-      resolve(false); // No DNS blocking
+      resolve(false);
     };
 
     testImg.onerror = () => {
       clearTimeout(timeout);
-      resolve(true); // DNS is blocking
+      resolve(true);
     };
   });
 }
 
-// Show DNS Warning Screen
 async function showDNSWarningIfNeeded() {
-  const isBlocking = await detectPrivateDNS();
+  const isUsingPrivateDNS = await detectPrivateDNS();
 
-  if (isBlocking) {
+  if (isUsingPrivateDNS) {
     const overlay = document.getElementById("dns-warning-overlay");
-    if (overlay) {
-      overlay.style.display = "flex";
+    if (!overlay) return;
 
-      // Close app when button clicked
-      document.getElementById("dns-disable-btn").addEventListener("click", () => {
-        // For WebView
-        if (window.Android && Android.closeApp) {
+    overlay.style.display = "flex";
+
+    // Button Click Handler
+    const btn = document.getElementById("dns-disable-btn");
+    if (btn) {
+      btn.onclick = () => {
+        // Hide the warning
+        overlay.style.display = "none";
+
+        // Try to close app (for WebView)
+        if (window.Android && typeof Android.closeApp === "function") {
           Android.closeApp();
         } else {
-          // For normal browser
-          window.close();
-          // Fallback message
-          setTimeout(() => {
-            alert("Please close the app and disable Private DNS.");
-          }, 300);
+          // For browser / PWA - Show nice message instead of alert
+          showToast("Please disable Private DNS and reopen the app.", "error");
         }
-      }, { once: true });
+      };
     }
   }
 }
 
-// Run DNS check on every app open
+// Run check every time app opens (after loader)
 window.addEventListener("load", () => {
-  // Run after small delay so loader finishes
   setTimeout(() => {
     showDNSWarningIfNeeded();
-  }, 2800);
+  }, 2600);
 });
-
 
 
 console.log("✅ Persistent Login Activated + Main Script Loaded");
