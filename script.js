@@ -294,10 +294,9 @@ window.onAdRewarded = async function () {
 if (window.pendingRewardType === "watch_ad") {
 
   const user = window.cashTreasureUser;
-
   if (!user) return;
 
-  import("./firebase.js").then(async ({ db }) => {
+  import("./firebase.js").then(async ({ db, logTransaction }) => {
 
     const {
       doc,
@@ -308,40 +307,35 @@ if (window.pendingRewardType === "watch_ad") {
       "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
     );
 
+    // Update user data
     await updateDoc(doc(db, "users", user.uid), {
-
       credits: increment(1),
       daily_ads_watched: increment(1),
       daily_credits_earned: increment(1),
       total_earned: increment(1)
-
     });
 
-    const freshDoc = await getDoc(doc(db, "users", user.uid));
+    // 🔥 ADD THIS LINE - Log transaction for wallet history
+    await logTransaction(user.uid, "Watch Ad Reward", 1);
 
+    const freshDoc = await getDoc(doc(db, "users", user.uid));
     const profile = freshDoc.data();
 
     user.credits = profile.credits || 0;
 
     const creditEl = document.getElementById("credit-count");
-
     if (creditEl) {
-
       creditEl.textContent = user.credits;
     }
 
     const adCountEl = document.getElementById("ad-count");
-
     if (adCountEl) {
-
-      adCountEl.textContent =
-        `${profile.daily_ads_watched || 0} / 20 ads today`;
+      adCountEl.textContent = `${profile.daily_ads_watched || 0} / 20 ads today`;
     }
 
     showToast("+1 Credit Added 🎉");
 
     if (window.renderCheckin) {
-
       window.renderCheckin(profile);
     }
   });
