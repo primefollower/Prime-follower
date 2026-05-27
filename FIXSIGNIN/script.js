@@ -122,7 +122,8 @@ import { auth, db } from "../firebase.js";
 
 import {
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendEmailVerification,
@@ -153,6 +154,32 @@ setPersistence(auth, browserLocalPersistence)
   .catch((error) => {
     console.error("Persistence error:", error);
   });
+
+
+
+  // ================================
+// HANDLE GOOGLE REDIRECT RESULT
+// ================================
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      const user = result.user;
+      await createUserProfile(user);
+      
+      const username = user.displayName || user.email?.split("@")[0] || "User";
+      showMessage("login-msg", `✅ Welcome ${username}!`, "success");
+      
+      setTimeout(() => {
+        showPuzzleLoader(username);
+      }, 800);
+    }
+  } catch (err) {
+    console.error("Redirect Result Error:", err.code, err.message);
+  }
+});
+
+
 
 // Check if user is already logged in on page load
 onAuthStateChanged(auth, async (user) => {
@@ -858,31 +885,20 @@ if (loginForm) {
 }
 
 // ================================
-// Google Sign-In/Register
+// Google Sign-In/Register (Using Redirect - More Reliable)
 // ================================
+const provider = new GoogleAuthProvider();
+provider.addScope('profile');
+provider.addScope('email');
+
 const googleSignInBtn = document.getElementById("google-signin-btn");
 if (googleSignInBtn) {
   googleSignInBtn.addEventListener("click", async () => {
     try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      
-      // Create/update profile in Firestore
-      await createUserProfile(user);
-      
-      const username = user.displayName || user.email.split("@")[0];
-      showMessage("login-msg", `✅ Welcome ${username}!`, "success");
-      
-      setTimeout(() => {
-        showPuzzleLoader(username);
-      }, 500);
-      
+      await signInWithRedirect(auth, provider);
     } catch (err) {
-      let errorMessage = "❌ Google Sign-In failed.";
-      if (err.code === "auth/popup-closed-by-user") {
-        errorMessage = "❌ You closed the popup.";
-      }
-      showMessage("login-msg", errorMessage, "error");
+      console.error("Google Redirect Error:", err);
+      showMessage("login-msg", "❌ Failed to start Google Sign-In. Try again.", "error");
     }
   });
 }
@@ -894,25 +910,10 @@ googleRegisterBtns.forEach((btn, index) => {
   
   btn.addEventListener("click", async () => {
     try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      
-      // Create profile in Firestore
-      await createUserProfile(user);
-      
-      const username = user.displayName || user.email.split("@")[0];
-      showMessage("register-msg", `✅ Welcome ${username}!`, "success");
-      
-      setTimeout(() => {
-        showPuzzleLoader(username);
-      }, 500);
-      
+      await signInWithRedirect(auth, provider);
     } catch (err) {
-      let errorMessage = "❌ Google Sign-Up failed.";
-      if (err.code === "auth/popup-closed-by-user") {
-        errorMessage = "❌ You closed the popup.";
-      }
-      showMessage("register-msg", errorMessage, "error");
+      console.error("Google Redirect Error:", err);
+      showMessage("register-msg", "❌ Failed to start Google Sign-Up. Try again.", "error");
     }
   });
 });
